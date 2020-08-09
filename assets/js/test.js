@@ -8,6 +8,8 @@ class ViewModel{
     constructor(){
         this.count = new OneWayProp(0);
         this.text = new TwoWayProp('');
+        this.select = new TwoWayProp(1);
+        this.radio = new TwoWayProp(1);
         this.items = new OneWayCollectionProp([{name: 'Victor'}, {name: 'Carlos'}, {name: 'Luis'}]);
 
         this.interval = setInterval(() => {
@@ -28,6 +30,8 @@ class ViewModel{
         this.count.subscribeMany(document.querySelectorAll('[data-prop="count"]'));
         this.text.subscribeMany(document.querySelectorAll('[data-prop="text"]'));
         this.items.subscribeMany(document.querySelectorAll('[data-prop="items"]'));
+        this.select.subscribeMany(document.querySelectorAll('[data-prop="select"]'));
+        this.radio.subscribeMany(document.querySelectorAll('[data-prop="radio"]'));
 
         document.querySelector('button').addEventListener('click', (e) => {
             this.text.set('');
@@ -39,6 +43,8 @@ class OneWayProp{
     constructor(value) {
         this.observers = [];
         this.value = value;
+        this.type = typeof value;
+        this.constructor = value.constructor;
     }   
     
     subscribe(element) {
@@ -51,6 +57,22 @@ class OneWayProp{
     }
 
     set(value) {
+        switch(this.type){
+            case 'string':
+                value = value.toString();
+                break;
+            case 'number':
+                value = parseFloat(value);
+                if(isNaN(value)){
+                    throw new Error('Tried to set invalid number value');
+                }
+            case 'object':
+                if(value.constructor != this.constructor){
+                    throw new Error('Property instantiated for', this.constructor.name, '. Cannot set value of type', value.constructor.name);
+                }
+                break;
+        }
+
         this.value = value;
         for(let i = 0; i < this.observers.length; i++){
             this.setElementValue(this.observers[i], value);
@@ -64,6 +86,10 @@ class OneWayProp{
     setElementValue(element, value) {
         switch(element.tagName){
             case 'INPUT':
+                if(element.matches('[type="radio"]')){
+                    element.checked = element.value == value;
+                    break;
+                }
             case 'SELECT':
             case 'TEXTAREA':
                 element.value = value;
@@ -118,6 +144,9 @@ class TwoWayProp extends OneWayProp{
 class OneWayCollectionProp extends OneWayProp{
     constructor(value){
         super(value);
+        if(!Array.isArray(value)){
+            throw new Error('Parameter value is not of type array');
+        }
     }
 
     setElementValue(element, collection) {
