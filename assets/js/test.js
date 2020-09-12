@@ -39,25 +39,28 @@ class ViewModel{
     }
 }
 
-class OneWayProp{
-    constructor(value) {
+
+export class OneWayProp{
+    constructor(value, type, formatFunctions) {
         this.observers = [];
         this.value = value;
-        this.type = typeof value;
-        this.constructor = value.constructor;
+        this.formatFunctions = formatFunctions;
+        this.type = type;
     }   
     
     subscribe(element) {
         this.observers.push(element);
+        this.setElementValue(element, this.value);
     }
 
     subscribeMany(elements) {
         this.observers.push(...elements);
-        this.set(this.value);
+        this.setElementValue(element, this.value);
     }
 
     set(value) {
-        switch(this.type){
+        let type = this.type || typeof value;
+        switch(type){
             case 'string':
                 value = value.toString();
                 break;
@@ -66,9 +69,10 @@ class OneWayProp{
                 if(isNaN(value)){
                     throw new Error('Tried to set invalid number value');
                 }
-            case 'object':
-                if(value.constructor != this.constructor){
-                    throw new Error('Property instantiated for', this.constructor.name, '. Cannot set value of type', value.constructor.name);
+                break;
+            case 'date':
+                if(value){
+                    value = new Date(value);
                 }
                 break;
         }
@@ -84,6 +88,10 @@ class OneWayProp{
     }
 
     setElementValue(element, value) {
+        if(this.formatFunctions && element.matches('[data-format]')){
+            value = this.formatFunctions[element.getAttribute('data-format')](value);
+        }
+
         switch(element.tagName){
             case 'INPUT':
                 if(element.matches('[type="radio"]')){
@@ -101,9 +109,9 @@ class OneWayProp{
     }
 }
 
-class TwoWayProp extends OneWayProp{
-    constructor(value) {
-        super(value);
+export class TwoWayProp extends OneWayProp{
+    constructor(value, type, formatFunctions) {
+        super(value, type, formatFunctions);
     }   
     
     subscribe(element) {
@@ -141,9 +149,9 @@ class TwoWayProp extends OneWayProp{
     }
 }
 
-class OneWayCollectionProp extends OneWayProp{
-    constructor(value){
-        super(value);
+export class OneWayCollectionProp extends OneWayProp{
+    constructor(value, formatFunctions){
+        super(value, 'array', formatFunctions);
         if(!Array.isArray(value)){
             throw new Error('Parameter value is not of type array');
         }
@@ -157,10 +165,22 @@ class OneWayCollectionProp extends OneWayProp{
             let node = template.content.cloneNode(true);
             for(let bindingChild of node.querySelectorAll('[data-value]')){
                 const prop = bindingChild.getAttribute('data-value');
+                const attr = bindingChild.getAttribute('data-attr');
+                let value;
                 if(prop){
-                    bindingChild.textContent = item[prop];
+                    value = item[prop];
                 }else{
-                    bindingChild.textContent = item;
+                    value = item;
+                }
+
+                if(this.formatFunctions && bindingChild.matches('[data-format]')){
+                    value = this.formatFunctions[bindingChild.getAttribute('data-format')](value);
+                }
+
+                if(attr){
+                    bindingChild.setAttribute(attr, value);
+                }else{
+                    bindingChild.textContent = value;
                 }
             }
 
