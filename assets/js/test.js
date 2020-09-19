@@ -40,6 +40,7 @@ class ViewModel{
 }
 
 
+
 export class OneWayProp{
     constructor(value, type, formatFunctions) {
         this.observers = [];
@@ -55,7 +56,10 @@ export class OneWayProp{
 
     subscribeMany(elements) {
         this.observers.push(...elements);
-        this.setElementValue(element, this.value);
+
+        for(let element of elements){
+            this.setElementValue(element, this.value);
+        }
     }
 
     set(value) {
@@ -65,9 +69,11 @@ export class OneWayProp{
                 value = value.toString();
                 break;
             case 'number':
-                value = parseFloat(value);
-                if(isNaN(value)){
-                    throw new Error('Tried to set invalid number value');
+                if(value != null){
+                    value = parseFloat(value);
+                    if(isNaN(value)){
+                        throw new Error('Tried to set invalid number value');
+                    }
                 }
                 break;
             case 'date':
@@ -94,7 +100,7 @@ export class OneWayProp{
 
         switch(element.tagName){
             case 'INPUT':
-                if(element.matches('[type="radio"]')){
+                if(element.matches('[type="checkbox"], [type="radio"]')){
                     element.checked = element.value == value;
                     break;
                 }
@@ -140,6 +146,10 @@ export class TwoWayProp extends OneWayProp{
                 }
                 break;
             case 'SELECT':
+                element.addEventListener('input', (e) => {
+                    this.set(e.target.value != '' ? e.target.value : null);
+                });
+                break;
             case 'TEXTAREA':
                 element.addEventListener('input', (e) => {
                     this.set(e.target.value);
