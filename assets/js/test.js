@@ -114,6 +114,24 @@ class OneWayProp{
                     value = new Date(value);
                 }
                 break;
+            case 'boolean':
+                if(typeof value !== 'boolean'){  
+                    switch(value){
+                        case 'true':
+                            value = true;
+                            break;
+                        case 'false':
+                            value = false;
+                            break;
+                        case '':
+                        case null:
+                            value = null; 
+                            break;
+                        default:
+                            throw new Error('Tried to set invalid boolean value');
+                    }
+                }
+                break;
         }
 
         this.#value = value;
