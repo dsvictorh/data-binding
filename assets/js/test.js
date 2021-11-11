@@ -55,35 +55,12 @@ class OneWayProp{
 
     subscribe(element){
         this.#observers.push(element);
-        this.setElementValue(element, this.#value);
+        this._setElementValue(element, this.#value);
     }
 
     subscribeMany(elements){
         for(let i = 0; i < elements.length; i++){
             this.subscribe(elements[i]);
-        }
-    }
-
-    setElementValue(element, value){
-        if(this.formatFunctions && element.matches('[data-format]')){
-            value = this.formatFunctions[element.getAttribute('data-format')](value);
-        }
-
-        switch(element.tagName){
-            case 'INPUT':
-                if(element.matches('[type="checkbox"], [type="radio"]')){
-                    element.checked = element.value == value;
-                }else{
-                    element.value = value;
-                }
-                break;
-            case 'SELECT':
-            case 'TEXTAREA':
-                element.value = value;
-                break;
-            default:
-                element.textContent = value;
-                break;
         }
     }
 
@@ -138,7 +115,30 @@ class OneWayProp{
 
         const observers = this.#observers.filter((element) => origin == null || element != origin);
         for(let i = 0; i < observers.length; i++){
-            this.setElementValue(observers[i], value);
+            this._setElementValue(observers[i], value);
+        }
+    }
+
+    _setElementValue(element, value){
+        if(this.formatFunctions && element.matches('[data-format]')){
+            value = this.formatFunctions[element.getAttribute('data-format')](value);
+        }
+
+        switch(element.tagName){
+            case 'INPUT':
+                if(element.matches('[type="checkbox"], [type="radio"]')){
+                    element.checked = element.value == value;
+                }else{
+                    element.value = value;
+                }
+                break;
+            case 'SELECT':
+            case 'TEXTAREA':
+                element.value = value;
+                break;
+            default:
+                element.textContent = value;
+                break;
         }
     }
 }
@@ -150,17 +150,17 @@ class TwoWayProp extends OneWayProp{
 
     subscribe(element){
         super.subscribe(element);
-        this.addTwoWay(element);
+        this.#addTwoWay(element);
     }
 
     subscribeMany(elements){
         super.subscribeMany(elements)
         for(let i = 0; i < elements.length; i++){
-            this.addTwoWay(elements[i]);
+            this.#addTwoWay(elements[i]);
         }
     }
 
-    addTwoWay(element){
+    #addTwoWay(element){
         switch(element.tagName){
             case 'INPUT':
                 if(element.matches('[type="checkbox"], [type="radio"]')){
@@ -213,7 +213,7 @@ class OneWayCollectionProp extends OneWayProp{
         }
     }
 
-    setElementValue(element, collection){
+    _setElementValue(element, collection){
         let template = document.querySelector('#' + element.getAttribute('data-template'));
 
         element.innerHTML = '';
