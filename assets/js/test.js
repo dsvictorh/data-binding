@@ -1,7 +1,5 @@
-let viewModel;
-
 window.onload = () => {
-    viewModel = new ViewModel();
+    new ViewModel();
 }
 
 class ViewModel{
