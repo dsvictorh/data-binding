@@ -102,6 +102,12 @@ class OneWayProp{
                 value = value || null;
                 if(value != null){
                     value = new Date(value);
+
+                    //If a wrong parameter is passed to instantiate a date 
+                    //getTime() therefore the Date is in invalid state.
+                    if(isNaN(value.getTime())) {
+                        throw new Error('Tried to set invalid date value');
+                    }
                 }
                 break;
             case 'boolean':
