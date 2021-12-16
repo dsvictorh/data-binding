@@ -104,7 +104,8 @@ class OneWayProp{
                     value = new Date(value);
 
                     //If a wrong parameter is passed to instantiate a date 
-                    //getTime() therefore the Date is in invalid state.
+                    //getTime() not having an epoch will fails isNaN checks
+                    //therefore the Date is in an invalid state.
                     if(isNaN(value.getTime())) {
                         throw new Error('Tried to set invalid date value');
                     }
