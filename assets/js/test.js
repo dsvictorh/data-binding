@@ -152,23 +152,27 @@ class OneWayProp{
             value = this._formatFunctions[element.getAttribute('data-format')](value);
         }
 
-        switch(element.tagName){
-            case 'INPUT':
-                if(element.matches('[type="checkbox"], [type="radio"]')){
-                    element.checked = element.value == value;
-                }else{
+        if(element instanceof RadioNodeList){
+            element.value = value;
+        }else{
+            switch(element.tagName){
+                case 'INPUT':
+                    if(element.matches('[type="checkbox"], [type="radio"]')){
+                        element.checked = element.value == value;
+                    }else{
+                        element.value = value;
+                    }
+                    break;
+                case 'SELECT':
+                    element.value = value != null ? value : '';
+                    break;
+                case 'TEXTAREA':
                     element.value = value;
-                }
-                break;
-            case 'SELECT':
-                element.value = value != null ? value : '';
-                break;
-            case 'TEXTAREA':
-                element.value = value;
-                break;
-            default:
-                element.textContent = value;
-                break;
+                    break;
+                default:
+                    element.textContent = value;
+                    break;
+            }
         }
     }
 }
@@ -289,28 +293,28 @@ class OneWayCollectionProp extends OneWayProp{
             }
 
             //Properties or values in the collection can be set into an attribute instead of the text node
-            for(const bindingChild of node.querySelectorAll('[data-attr]')) {
+            for(const bindingChild of node.querySelectorAll('[data-attr]')){
                 const attrs = bindingChild.getAttribute('data-attr');
                 const validRegex = /^[ ]*[^:\s]+[ ]*(:[ ]*([A-z]|_|\$)+([A-z]|_|\$|[0-9]|\.)*[ ]*)*(\,[ ]*[^:\s]+[ ]*(:[ ]*([A-z]|_|\$)+([A-z]|_|\$|[0-9]|\.)*[ ]*)*)*[ ]*$/gs;
 
                 //Validate through regex that data-attr follows the correct pattern
-                if(!attrs.match(validRegex)) {
+                if(!attrs.match(validRegex)){
                     throw new Error(`Property data-attr for element ${element.tagName} has invalid format`)
                 }
 
                 //Separate all attribute mappings
-                for(const attr of attrs.split(',')) {
+                for(const attr of attrs.split(',')){
                     //Create key-value pairs
                     const pair = attr.split(':');
                     const attribute = pair[0].trim();
                     let value;
 
-                    if(pair.length == 2) {
+                    if(pair.length == 2){
                         //Properties can come from complex objects with several levels
                         //so the get property function recursively gets to the end value
                         //property separated by "." just like a JS object
                         value = this.#getProperty(item, pair[1].trim().split('.'));
-                    }else {
+                    }else{
                         value = item;
                     }
 
