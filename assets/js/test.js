@@ -114,7 +114,7 @@ class OneWayProp{
             case 'boolean':
                 //Many DOM elements don't handle true or false but rather empty values
                 //so we need to make sure we account for these
-                if(typeof value !== 'boolean'){  
+                if(typeof value !== 'boolean'){
                     switch(value){
                         case 'true':
                             value = true;
@@ -161,6 +161,8 @@ class OneWayProp{
                 }
                 break;
             case 'SELECT':
+                element.value = value != null ? value : '';
+                break;
             case 'TEXTAREA':
                 element.value = value;
                 break;
@@ -178,7 +180,13 @@ class TwoWayProp extends OneWayProp{
 
     subscribe(element){
         super.subscribe(element);
-        this.#addTwoWay(element);
+        if(element instanceof RadioNodeList){
+            for(let node of element) {
+                this.#addTwoWay(node);
+            }
+        }else {
+            this.#addTwoWay(element);
+        }
     }
 
     subscribeMany(elements){
@@ -193,7 +201,7 @@ class TwoWayProp extends OneWayProp{
     #addTwoWay(element){
         switch(element.tagName){
             case 'INPUT':
-                if(element.matches('[type="checkbox"], [type="radio"]')){
+                if(element.matches('[type="checkbox"], [type="radio"]')){ 
                     element.addEventListener('change', (e) => {
                         this._set(e.target.value, e.target);
                     });
@@ -230,7 +238,7 @@ class OneWayCollectionProp extends OneWayProp{
     subscribe(element){
         //Collection bindings work through HTML templates and are required.
         if(!element.getAttribute('data-template')){
-            throw new Error('Subscriber element ' + element.tagName + ' does not have required data-template attribute');
+            throw new Error(`Subscriber element ${element.tagName} does not have required data-template attribute`);
         }
 
         super.subscribe(element);
@@ -240,7 +248,7 @@ class OneWayCollectionProp extends OneWayProp{
         for(let i = 0; i < elements.length; i++){
             //Collection bindings work through HTML templates and are required.
             if(!elements[i].getAttribute('data-template')){
-                throw new Error('Subscriber element ' + elements[i].tagName + ' does not have required data-template attribute');
+                throw new Error(`Subscriber element ${elements[i].tagName} does not have required data-template attribute`);
             }
 
             super.subscribe(elements[i]);
@@ -259,9 +267,8 @@ class OneWayCollectionProp extends OneWayProp{
             
             //Grab all value attribute elements from the template that need to be filled with
             //the data provided by the current item in the collection
-            for(let bindingChild of node.querySelectorAll('[data-value]')){
+            for(const bindingChild of node.querySelectorAll('[data-value]')){
                 const prop = bindingChild.getAttribute('data-value'); 
-                const attr = bindingChild.getAttribute('data-attr');
                 let value;
 
                 if(prop){
@@ -278,11 +285,36 @@ class OneWayCollectionProp extends OneWayProp{
                     value = this._formatFunctions[bindingChild.getAttribute('data-format')](value);
                 }
 
-                //The value can be set into the text node of the HTML element or inside a specified attribute
-                if(attr){
-                    bindingChild.setAttribute(attr, value);
-                }else{
-                    bindingChild.textContent = value;
+                bindingChild.textContent = value;
+            }
+
+            //Properties or values in the collection can be set into an attribute instead of the text node
+            for(const bindingChild of node.querySelectorAll('[data-attr]')) {
+                const attrs = bindingChild.getAttribute('data-attr');
+                const validRegex = /^[ ]*[^:\s]+[ ]*(:[ ]*([A-z]|_|\$)+([A-z]|_|\$|[0-9]|\.)*[ ]*)*(\,[ ]*[^:\s]+[ ]*(:[ ]*([A-z]|_|\$)+([A-z]|_|\$|[0-9]|\.)*[ ]*)*)*[ ]*$/gs;
+
+                //Validate through regex that data-attr follows the correct pattern
+                if(!attrs.match(validRegex)) {
+                    throw new Error(`Property data-attr for element ${element.tagName} has invalid format`)
+                }
+
+                //Separate all attribute mappings
+                for(const attr of attrs.split(',')) {
+                    //Create key-value pairs
+                    const pair = attr.split(':');
+                    const attribute = pair[0].trim();
+                    let value;
+
+                    if(pair.length == 2) {
+                        //Properties can come from complex objects with several levels
+                        //so the get property function recursively gets to the end value
+                        //property separated by "." just like a JS object
+                        value = this.#getProperty(item, pair[1].trim().split('.'));
+                    }else {
+                        value = item;
+                    }
+
+                    bindingChild.setAttribute(attribute, value);
                 }
             }
 
