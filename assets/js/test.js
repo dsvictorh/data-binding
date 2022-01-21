@@ -19,6 +19,7 @@ class ViewModel{
 
         setTimeout(() => {
             this.items.value = [{name: 'Victor'}, {name: 'Carlos'}, {name: 'Luis'}, {name: 'Diana'}];
+            this.radio.value = 2;
         }, 1000);
 
         this.registerBindings();
@@ -30,6 +31,7 @@ class ViewModel{
         this.items.subscribeMany(document.querySelectorAll('[data-prop="items"]'));
         this.select.subscribeMany(document.querySelectorAll('[data-prop="select"]'));
         this.radio.subscribeMany(document.querySelectorAll('[data-prop="radio"]'));
+        this.radio.subscribeMany(document.forms.form.input);
 
         document.querySelector('button').addEventListener('click', (e) => {
             this.text.value = '';
@@ -152,27 +154,29 @@ class OneWayProp{
             value = this._formatFunctions[element.getAttribute('data-format')](value);
         }
 
-        if(element instanceof RadioNodeList){
-            element.value = value;
-        }else{
-            switch(element.tagName){
-                case 'INPUT':
-                    if(element.matches('[type="checkbox"], [type="radio"]')){
-                        element.checked = element.value == value;
-                    }else{
-                        element.value = value;
-                    }
-                    break;
-                case 'SELECT':
-                    element.value = value != null ? value : '';
-                    break;
-                case 'TEXTAREA':
+        switch(element.tagName){
+            case 'INPUT':
+                if(element.matches('[type="checkbox"], [type="radio"]')){
+                    element.checked = element.value == value;
+                }else{
                     element.value = value;
-                    break;
-                default:
+                }
+                break;
+            case 'SELECT':
+                element.value = value != null ? value : '';
+                break;
+            case 'TEXTAREA':
+                element.value = value;
+                break;
+            default:
+                //RadioNodeList is the type when using radio buttons through the DOM forms object
+                //and its value functions as a single property
+                if(element instanceof RadioNodeList){
+                    element.value = value;
+                }else{
                     element.textContent = value;
-                    break;
-            }
+                }
+                break;
         }
     }
 }
@@ -184,17 +188,11 @@ class TwoWayProp extends OneWayProp{
 
     subscribe(element){
         super.subscribe(element);
-        if(element instanceof RadioNodeList){
-            for(let node of element) {
-                this.#addTwoWay(node);
-            }
-        }else {
-            this.#addTwoWay(element);
-        }
+        this.#addTwoWay(element);
     }
 
     subscribeMany(elements){
-        super.subscribeMany(elements)
+        super.subscribeMany(elements);
         for(let i = 0; i < elements.length; i++){
             this.#addTwoWay(elements[i]);
         }
@@ -224,6 +222,11 @@ class TwoWayProp extends OneWayProp{
                 break;
             case 'TEXTAREA':
                 element.addEventListener('input', (e) => {
+                    this._set(e.target.value, e.target);
+                });
+                break;
+            default:
+                element.addEventListener('change', (e) => {
                     this._set(e.target.value, e.target);
                 });
                 break;
