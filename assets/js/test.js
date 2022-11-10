@@ -8,7 +8,16 @@ class ViewModel {
         this.text = new TwoWayProp('Hola', 'string');
         this.select = new TwoWayProp(1);
         this.radio = new TwoWayProp(1);
-        this.items = new OneWayCollectionProp([{ name: 'Victor', age: 30 }, { name: 'Carlos', age: 31 }, { name: 'Luis', age: 32 }]);
+        this.items = new OneWayCollectionProp([{ id: 1, name: 'Victor', age: 30 }, { id: 2, name: 'Carlos', age: 31 }, { id: 3, name: 'Luis', age: 32 }]);
+        this.date = new OneWayProp(new Date(), 'date', {
+            toDisplayDate: (value) => {
+                return value.toLocaleString();
+            }
+        })
+
+        setInterval(() => {
+            this.date.value = new Date();
+        }, 1000);
 
         this.interval = setInterval(() => {
             this.count.value = this.count.value + 1;
@@ -18,7 +27,7 @@ class ViewModel {
         }, 1000);
 
         setTimeout(() => {
-            this.items.value = [{ name: 'Victor', age: 30 }, { name: 'Carlos', age: 31 }, { name: 'Luis', age: 32 }, { name: 'Diana', age: 33 }];
+            this.items.value = [...this.items.value, { id: 4, name: 'Diana', age: 33 }];
             this.radio.value = 2;
         }, 1000);
 
@@ -26,6 +35,7 @@ class ViewModel {
     }
 
     registerBindings() {
+        this.date.subscribeMany(document.querySelectorAll('[data-prop="date"]'));
         this.count.subscribeMany(document.querySelectorAll('[data-prop="count"]'));
         this.text.subscribeMany(document.querySelectorAll('[data-prop="text"]'));
         this.items.subscribeMany(document.querySelectorAll('[data-prop="items"]'));

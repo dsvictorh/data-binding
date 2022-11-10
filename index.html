@@ -6,15 +6,16 @@
     <title>Document</title>
 </head>
 <body>
+    <h1 data-prop="date" data-format="toDisplayDate"></h1>
     <input type="text" data-prop="count" />
+    <h3 data-prop="count"></h3>
     <p data-prop="count"></p>
-    <h1 data-prop="count"></h1>
     <textarea data-prop="text"></textarea>
     <p data-prop="text"></p>
     <button type="button">Reset</button>
     <ul data-prop="items" data-template="itemsListItem"></ul>
     <template id="itemsListItem">
-        <li>
+        <li data-attr="data-id: id">
             <span data-value="name"></span>
             <span data-value="age"></span>
         </li>
