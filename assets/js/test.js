@@ -13,7 +13,7 @@ class ViewModel {
             toDisplayDate: (value) => {
                 return value.toLocaleString();
             }
-        })
+        });
 
         setInterval(() => {
             this.date.value = new Date();
